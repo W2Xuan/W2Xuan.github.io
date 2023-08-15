@@ -1,13 +1,3 @@
----
-layout: post
-title: flask框架
-data: 2023-8-11 19:26:00 +0800
-category: 框架 
-tags: python flask 框架
----
-
-
-
 # [Flask框架](https://www.w3cschool.cn/flask/flask_routing.html)
 
 ## 安装
