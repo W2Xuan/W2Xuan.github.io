@@ -1,4 +1,4 @@
-# [Flask框架](https://www.w3cschool.cn/flask/flask_routing.html)
+## [Flask框架](https://www.w3cschool.cn/flask/flask_routing.html)
 
 ## 安装
 
@@ -48,6 +48,28 @@ def hello_world():
    return 'hello world'
 app.add_url_rule('/', 'hello', hello_world)
 ```
+
+
+
+```python
+from flask import Flask, request
+
+app = Flask(__name__)
+
+
+@app.route('/book/list')
+def book_list():
+    page = request.args.get("page", default=1, type=int)
+    return f"你获取的页面是{page}的图书列表！"
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port='5000')
+```
+
+![image-20230816022047629](./flask框架/image-20230816022047629.png)
+
+![image-20230816022114723](./flask框架/image-20230816022114723.png)
 
 ## Flask 变量规则
 
@@ -750,3 +772,166 @@ if __name__ == '__main__':
 #### 输入一个错误的账号密码
 
 ![image-20230815032122589](/2023-8-11-flask框架/image-20230815032122589.png)
+
+## Flask过滤器
+
+也就是jinja2，flask对jinja2进行了进一步的封装
+
+### Flask所有过滤器
+
+<table><thead><tr><th>过滤器</th><th>描述</th></tr></thead><tbody><tr><td>abs(value)</td><td>返回一个数值的绝对值。 例如：-1</td></tr><tr><td>default(value,default_value,boolean=false)</td><td>如果当前变量没有值，则会使用参数中的值来代替。name|default(‘xiaoli’)——如果 name 不存在，则会使用 xiaoli 来替代。boolean=False 默认是在只有这个变量为 undefined 的时候才会使用default 中的值，如果想使用 python 的形式判断是否为 false，则可以传递 boolean=true。也可以使用 or 来替换。</td></tr><tr><td>escape(value) 或 e</td><td>转义字符，会将&lt;、&gt;等符号转义成HTML中的符号。例如：content|escape 或 content|e。</td></tr><tr><td>first(value)</td><td>返回一个序列的第一个元素。names</td></tr><tr><td>format(value,*arags,**kwargs)</td><td>格式化字符串。例如以下代码：{<!-- -->{ “%s” - “%s”|format(‘Hello?’,“Foo!”) }} 将输出：Hello? - Foo!</td></tr><tr><td>last(value)</td><td>返回一个序列的最后一个元素。示例：names|last。</td></tr><tr><td>length(value)</td><td>返回一个序列或者字典的长度。示例：names|length。</td></tr><tr><td>join(value,d=’+’)</td><td>将一个序列用d这个参数的值拼接成字符串。</td></tr><tr><td>safe(value)</td><td>如果开启了全局转义，那么 safe 过滤器会将变量关掉转义。示例：content_html|safe。</td></tr><tr><td>int(value)</td><td>将值转换为 int 类型。</td></tr><tr><td>float(value)</td><td>将值转换为 float 类型。</td></tr><tr><td>lower(value)</td><td>将字符串转换为小写。</td></tr><tr><td>upper(value)</td><td>将字符串转换为小写。</td></tr><tr><td>replace(value,old,new)</td><td>替换将 old 替换为 new 的字符串。</td></tr><tr><td>truncate(value,length=255,killwords=False)</td><td>截取 length 长度的字符串。</td></tr><tr><td>striptags(value)</td><td>删除字符串中所有的 HTML 标签，如果出现多个空格，将替换成一个空格。</td></tr><tr><td>trim</td><td>截取字符串前面和后面的空白字符。</td></tr><tr><td>string(value)</td><td>将变量转换成字符串。</td></tr><tr><td>wordcount(s)</td><td>计算一个长字符串中单词的个数。</td></tr></tbody></table>
+
+### 自定义过滤器
+
+#### 方法1
+
+```python
+from flask import Flask, render_template
+from datetime import datetime
+
+app = Flask(__name__)
+
+
+def datatime_format(value, format='%Y-%d-%m %H:%M'):
+    return value.strftime(format)
+
+
+app.add_template_filter(datatime_format, "datatime_format")
+"""
+def datatime_format(value, format='%Y-%d-%m %H:%M'):：这是一个Python函数的定义。它接受两个参数：value和format，其中value代表要格式
+化的日期时间对象，format是可选的格式字符串，默认为'%Y-%d-%m %H:%M'。
+
+return value.strftime(format)：这里使用strftime()函数来对value进行格式化。strftime()是Python标准库中的一个方法，用于将日期时间对象转换
+为指定格式的字符串。
+
+app.add_template_filter(datatime_format, "datatime_format")：这里使用add_template_filter()方法将自定义过滤器添加到Flask应用程序
+中。第一个参数datatime_format是过滤器函数的名称，第二个参数"datatime_format"是你想在模板中使用的过滤器的名称。
+"""
+
+
+@app.route("/")
+def index():
+    time = datetime.now()
+    return render_template("login.html", time=time)
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port='5000')
+
+```
+
+index.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <div>{{ time | datatime_format }}</div>
+</body>
+</html>
+```
+
+效果
+
+![image-20230816025300680](./flask框架/image-20230816025300680.png)
+
+#### 方法2
+
+```python
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+
+# 自定义过滤器
+@app.template_filter('reverse')
+def reverse_filter(s):
+    return s[::-1]
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+<div>{{ "hello world"|reverse }}</div>
+</body>
+</html>
+```
+
+![image-20230816025754924](./flask框架/image-20230816025754924.png)
+
+## 模板继承
+
+```python
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+
+@app.template_filter('reverse')
+def reverse_filter(s):
+    return s[::-1]
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+base.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+<div>{{ "父模板"|reverse }}</div>
+{% block body %}
+{% endblock %}
+</body>
+</html>
+
+```
+
+index.html
+
+```html
+{% extends "base.html" %}
+
+{% block title %}
+我是子模板的标题
+{% endblock %}
+
+{% block body %}
+我是子模板的内容
+{% endblock %}
+
+```
+
+响应结果
+
+![image-20230816032153906](./flask框架/image-20230816032153906.png)
